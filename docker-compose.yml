@@ -1,0 +1,13 @@
+version: "3"
+
+services:
+  ninjago:
+    image: ninjago:latest
+    build: .
+    environment:
+      - NINJAGO=${NINJAGO}
+      - DISPLAY=${DISPLAY}
+    network_mode: host
+    user: lloyd
+    privileged: true
+    shm_size: 2gb
