@@ -5,10 +5,11 @@ This driver plays to [LEGO Ninjago Prime Empire](https://www.lego.com/fr-be/kids
 
 ## Install and run
 
- 1. Clone the project: `$ git clone git@github.com:Raphhh/ninjago.git && cd ninjago`
- 2. Build docker image: `# docker-compose build`
- 3. (Maybe you need to allow your host to display Chrome: `$ xhost local:root`)
- 4. Run docker: `# docker-compose up`
+ 1. This project works with Linux systems.
+ 2. Clone the project: `$ git clone git@github.com:Raphhh/ninjago.git && cd ninjago`
+ 3. Build docker image: `# docker-compose build`
+ 4. (Maybe you need to allow your host to display Chrome: `$ xhost local:root`)
+ 5. Run docker: `# docker-compose up`
 
 ## How it works
 
@@ -65,15 +66,20 @@ network_mode: host
  - [medium.com](https://medium.com/dot-debug/running-chrome-in-a-docker-container-a55e7f4da4a8)
  - [stackoverflow.com](https://stackoverflow.com/questions/28392949/running-chromium-inside-docker-gtk-cannot-open-display-0/34586732)
 
+
 ### Selenium in Docker
+
+#### Why Selenium?
 
 [Selenium](https://www.selenium.dev/) is a [WebDriver](https://developer.mozilla.org/en-US/docs/Web/WebDriver) client.
 It will allow us to manipulate Chrome easily from the code.
 
+#### Installing chromedriver
 
 In `Dockerfile`, we need to install [chromedriver](https://chromedriver.chromium.org) :
 
 ```dockerfile
+RUN apt install unzip
 COPY bin/install_chromedriver.sh /usr/bin/
 RUN /usr/bin/install_chromedriver.sh
 RUN rm /usr/bin/install_chromedriver.sh
@@ -88,9 +94,50 @@ In `requirements.txt`, we specify [selenium](https://selenium-python.readthedocs
 selenium~=4.0.0
 ```
 
-### Input control
+#### Retrieving console logs with chromedriver
 
-To simulate the normal user inputs and control mouse and keyboard, we use `pyautogui`.
+Remote logging is still considered a non-standard feature and not all the browsers support it. 
+
+The `loggingPrefs` is one of the capabilities of `chromedriver`,
+but does not appear in the [doc](https://chromedriver.chromium.org/capabilities).
+
+In python, we need to specify we want to retrieve all the logs coming from the browser,
+when we instantiate the driver.
+The key `browser` is the type of logs and means here the console logs from the browser.
+This is specific for each driver.
+
+```python
+from selenium import webdriver
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+
+capabilities = DesiredCapabilities.CHROME.copy()
+capabilities['goog:loggingPrefs'] = {'browser': 'ALL'}
+driver = webdriver.Chrome(desired_capabilities=capabilities)
+```
+
+Then, you can call the method `get_log`:
+
+```python
+console_log_entries = driver.get_log('browser')
+```
+
+##### Sources
+
+ - [Selenium specific capabilities](https://www.selenium.dev/documentation/webdriver/capabilities/driver_specific_capabilities/)
+ - [Selenium python API for desired capabilities](https://selenium-python.readthedocs.io/api.html#desired-capabilities)
+ - [Selenium logging](https://github.com/SeleniumHQ/selenium/wiki/Logging)
+
+### Input control with pyautogui
+
+#### Why input control?
+
+Selenium only interacts with selected html elements of the current page. 
+That means there is some security restrictions, as well in Javascript.
+To simulate totally normal user inputs and control mouse and keyboard, 
+we use `pyautogui` that will interact directly with the system.
+
+
+#### Installing pyautogui
 
 In  `Dockerfile`, we install the required system dependencies:
 
